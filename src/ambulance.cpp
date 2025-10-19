@@ -34,14 +34,28 @@ void Ambulance::sendPatients() {
     // Déterminer le nombre de patients à envoyer
     int nbPatientsToTransfer = 1 + rand() % 5;
 
-    // TODO
+    const int salary = getEmployeeSalary(EmployeeType::EmergencyStaff);
 
+    // TODO
+    // Conditions : doit avoir assez de patients et d'argent pour payer le salaire
+    if (stocks[ItemType::SickPatient] < nbPatientsToTransfer || money < salary)
+        return;
+
+    // On paie le salaire du jour
+    money -= salary;
+    
+    // On transfère les patients
+    stocks[ItemType::SickPatient] -= nbPatientsToTransfer;
+    hospital->transfer(ItemType::SickPatient, nbPatientsToTransfer);
+
+    // On reçoit le paiement pour le transport
+    money += nbPatientsToTransfer * getCostPerService(ServiceType::Transport);
 }
 
 void Ambulance::pay(int bill) {
-
     // TODO
-
+    // On raque
+    money += bill;
 }
 
 void Ambulance::setHospitals(std::vector<Seller*> h) {

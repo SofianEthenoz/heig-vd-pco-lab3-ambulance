@@ -53,7 +53,7 @@ void Hospital::pay(int bill) {
 int Hospital::transfer(ItemType what, int qty) {
     
     // TODO
-
+    return 0;
 }
 
 int Hospital::getNumberPatients() {
