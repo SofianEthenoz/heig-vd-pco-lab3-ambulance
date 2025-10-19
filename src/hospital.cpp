@@ -51,9 +51,9 @@ void Hospital::pay(int bill) {
 }
 
 int Hospital::transfer(ItemType what, int qty) {
-    
     // TODO
-    return 0;
+    
+    return this->stocks[what] += qty;
 }
 
 int Hospital::getNumberPatients() {

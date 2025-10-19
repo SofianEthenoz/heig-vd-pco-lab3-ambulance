@@ -1,5 +1,6 @@
 #include "supplier.h"
 #include "costs.h"
+#include "seller.h"
 #include <pcosynchro/pcothread.h>
 #include <iostream>
 
@@ -27,20 +28,24 @@ void Supplier::run() {
 }
 
 void Supplier::attemptToProduceResource() {
-
     // TODO
 
 }
 
 int Supplier::buy(ItemType it, int qty) {
-
     // TODO
+
+    // Retire la quantité achetée du stock
+    this->stocks[it] -= qty;
+
+    // Retourne le coût unitaire multiplié par la quantité
+    return getCostPerUnit(it) * qty;
 }
 
 void Supplier::pay(int bill) {
-
     // TODO
-
+    // Comme d'habitude on raque
+    this->money += bill;
 }
 
 int Supplier::getMaterialCost() {
