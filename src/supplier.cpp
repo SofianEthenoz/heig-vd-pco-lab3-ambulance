@@ -17,7 +17,9 @@ void Supplier::run() {
 
     while (true) {
         clock->worker_wait_day_start();
-        if (false /* TODO condition d'arrêt */) break;
+        
+        // TODO condition d'arrêt
+        if (PcoThread::thisThread()->stopRequested()) break;
 
         attemptToProduceResource();
 

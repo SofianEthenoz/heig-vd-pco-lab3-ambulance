@@ -1,7 +1,9 @@
 #include "insurance.h"
 #include "costs.h"
+#include <pcosynchro/pcomutex.h>
 #include <pcosynchro/pcothread.h>
 
+static PcoMutex mutex;
 
 Insurance::Insurance(int uniqueId, int fund) : Seller(fund, uniqueId) {}
 
@@ -10,7 +12,9 @@ void Insurance::run() {
 
     while (true) {
         clock->worker_wait_day_start();
-        if (false /* TODO condition d'arrêt */) break;
+
+        // TODO condition d'arrêt
+        if (PcoThread::thisThread()->stopRequested()) break;
 
         // Réception de la somme des cotisations journalières des assurés
         receiveContributions();
@@ -25,18 +29,41 @@ void Insurance::run() {
 }
 
 void Insurance::receiveContributions() {
-
     // TODO
-
+    this->money += 10;
 }
 
 void Insurance::invoice(int bill, Seller* who) {
-
     // TODO
 
+    // protéger l'accès concurrent à la liste des factures impayées
+    mutex.lock();
+
+    // on ajoute la facture à la liste des factures impayées
+    this->unpaidBills.push_back(std::make_pair(who, bill));
+
+    // libérer le mutex
+    mutex.unlock();
 }
 
 void Insurance::payBills() {
-
     // TODO
+    int temp = 0;
+    
+    for (std::pair<Seller*, int> bill : this->unpaidBills)
+    {
+        if(money >= bill.second)
+        {
+            // on paie la facture au Seller
+            bill.first->pay(bill.second);
+
+            // on retire le montant de la facture des fonds de l'assurance
+            this->money -= bill.second;
+
+            temp++;
+        }
+    }
+
+    // on retire les factures payées de la liste des factures impayées
+    this->unpaidBills.erase(this->unpaidBills.begin(), this->unpaidBills.begin() + temp);
 }
