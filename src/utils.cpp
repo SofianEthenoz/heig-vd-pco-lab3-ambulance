@@ -1,9 +1,13 @@
 #include "utils.h"
 
 void endService(const std::vector<std::unique_ptr<PcoThread> > &threads) {
-
     // TODO
+    // 1. On demande aux threads de s'arrêter
+    for (auto& thread : threads) {
+        if (thread) thread->requestStop();
+    }
 
+    // 2. On arrête de raquer
     std::cout << "It's time to end !" << std::endl;
 }
 

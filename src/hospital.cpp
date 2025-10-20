@@ -32,6 +32,11 @@ void Hospital::run() {
 
 void Hospital::transferSickPatientsToClinic() {
     // TODO
+
+    // Refuse si l'hôpital n’a plus de fonds
+    if (money <= 0)
+        return;    
+
     // on envoie les patients à la clinique se faire soigner
     this->clinics[0]->transfer(ItemType::SickPatient, this->stocks[ItemType::SickPatient]);
 
