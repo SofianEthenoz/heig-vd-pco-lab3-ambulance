@@ -67,11 +67,6 @@ public:
     void pay(int bill) override;
 
     /**
-     * @brief Pays employees involved in resource production.
-     */
-    void paySuppliersStaff();
-
-    /**
      * @brief Main execution loop of the supplier.
      *
      * Simulates the continuous activity of the supplier:

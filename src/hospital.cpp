@@ -67,7 +67,7 @@ void Hospital::updateRehab() {
     this->stocks[ItemType::RehabPatient] -= removedPatients;
 
     // On raque comme d'habitude
-    this->money += getCostPerService(ServiceType::Rehab) * removedPatients;
+    this->insurance->invoice(getCostPerService(ServiceType::Rehab) * removedPatients, this);
 }
 
 void Hospital::removeOneDayForAllPatients() {
