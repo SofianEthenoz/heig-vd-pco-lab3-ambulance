@@ -32,23 +32,33 @@ void Hospital::run() {
 
 void Hospital::transferSickPatientsToClinic() {
     // TODO
+    // pas de cliniques associées
+    if (clinics.empty()) return;
+
+    // pas de patients à transférer
+    if (stocks[ItemType::SickPatient] <= 0) return;
 
     // Refuse si l'hôpital n’a plus de fonds
     if (money <= 0)
         return;    
 
     // on envoie les patients à la clinique se faire soigner
-    this->clinics[0]->transfer(ItemType::SickPatient, this->stocks[ItemType::SickPatient]);
+    int accepted = this->clinics[0]->transfer(ItemType::SickPatient, this->stocks[ItemType::SickPatient]);
 
-    // on reçoit l'argent du transfert
-    this->money += getCostPerService(ServiceType::PreTreatmentStay) * this->stocks[ItemType::SickPatient];
+    // Si la clinique n'a rien accepté, on sort d'ici
+    if(accepted <= 0) return;
 
     // les patients ne sont plus dans l'hôpital
-    this->stocks[ItemType::SickPatient] = 0;
+    this->stocks[ItemType::SickPatient] -= accepted;
+
+    // on reçoit l'argent du transfert
+    this->insurance->invoice(getCostPerService(ServiceType::PreTreatmentStay) * accepted, this);
 }
 
 void Hospital::updateRehab() {
     // TODO
+    if (stocks[ItemType::RehabPatient] <= 0) return;
+
     // on décrémente le nombre de jours restants pour chaque patient
     removeOneDayForAllPatients();
 
@@ -127,6 +137,11 @@ int Hospital::transfer(ItemType what, int qty) {
     // 3. Transferer seulement si des lits sont disponibles
     int availableBeds = maxBeds - getNumberPatients();
 
+    // pas de lits disponibles
+    if(availableBeds <= 0)
+        return 0;
+
+    // pas assez de lits disponibles pour tous les patients
     if (availableBeds < qty)
     {
         // on accepte seulement le nombre de patients pouvant être hébergés

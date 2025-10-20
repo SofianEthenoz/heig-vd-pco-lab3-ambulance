@@ -31,17 +31,16 @@ void Insurance::run() {
 
 void Insurance::receiveContributions() {
     // TODO
-    this->money += 10;
+    this->money += INSURANCE_CONTRIBUTION;
 }
 
 void Insurance::invoice(int bill, Seller* who) {
     // TODO
-
     // protéger l'accès concurrent à la liste des factures impayées
     mutex.lock();
 
     // on ajoute la facture à la liste des factures impayées
-    this->unpaidBills.push_back(std::make_pair(who, bill));
+    this->unpaidBills.emplace_back(who, bill);
 
     // libérer le mutex
     mutex.unlock();
@@ -49,7 +48,7 @@ void Insurance::invoice(int bill, Seller* who) {
 
 void Insurance::payBills() {
     // TODO
-    int temp = 0;
+    int paid = 0;
     
     for (std::pair<Seller*, int> bill : this->unpaidBills)
     {
@@ -61,10 +60,12 @@ void Insurance::payBills() {
             // on retire le montant de la facture des fonds de l'assurance
             this->money -= bill.second;
 
-            temp++;
+            paid++;
+        } else {
+            break;
         }
     }
 
     // on retire les factures payées de la liste des factures impayées
-    this->unpaidBills.erase(this->unpaidBills.begin(), this->unpaidBills.begin() + temp);
+    this->unpaidBills.erase(this->unpaidBills.begin(), this->unpaidBills.begin() + paid);
 }

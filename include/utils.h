@@ -29,6 +29,8 @@
 
 #define MAX_BEDS_PER_HOSTPITAL 35
 
+#define INSURANCE_CONTRIBUTION 10
+
 /**
  * @brief Function that signifies the threads to stop (end of the simulation)
  * @param Threads to stop

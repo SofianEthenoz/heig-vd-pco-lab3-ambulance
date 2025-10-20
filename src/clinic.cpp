@@ -95,13 +95,16 @@ void Clinic::processNextPatient() {
 void Clinic::sendPatientsToRehab() {
     // TODO
     // on envoie les patients à l'hôpital en réhabilitation
-    this->hospitals[0]->transfer(ItemType::RehabPatient, this->stocks[ItemType::RehabPatient]);
+    const int accepted = this->hospitals[0]->transfer(ItemType::RehabPatient, this->stocks[ItemType::RehabPatient]);
 
-    // on reçoit l'argent du transfert
-    this->money += getCostPerService(ServiceType::Treatment) * this->stocks[ItemType::RehabPatient];
+    // Si l'hôpital n'a rien accepté, on sort d'ici
+    if (accepted <= 0) return;
 
     // les patients ne sont plus dans la clinique
-    this->stocks[ItemType::RehabPatient] = 0;
+    this->stocks[ItemType::RehabPatient] -= accepted;
+
+    // on crée la facture
+    this->insurance->invoice(getCostPerService(ServiceType::Treatment) * accepted, this);
 }
 
 void Clinic::orderResources() {
@@ -134,6 +137,9 @@ void Clinic::orderResources() {
 
 void Clinic::treatOne() {
     // TODO
+    // pas de patients à traiter
+    if (stocks[ItemType::SickPatient] <= 0) return;
+
     // si l'on n'a pas assez de fonds, le traitement ne sera pas effectif
     if(!hasResourcesForTreatment())
         return;

@@ -31,27 +31,36 @@ void Ambulance::run() {
 }
 
 void Ambulance::sendPatients() {
-    // Choisir un hôpital au hasard
-    auto* hospital = chooseRandomSeller(hospitals);
+    // TODO
     // Déterminer le nombre de patients à envoyer
     int nbPatientsToTransfer = 1 + rand() % 5;
 
+    // Obtenir le salaire d'un EmergencyStaff
     const int salary = getEmployeeSalary(EmployeeType::EmergencyStaff);
 
-    // TODO
-    // Conditions : doit avoir assez de patients et d'argent pour payer le salaire
-    if (stocks[ItemType::SickPatient] < nbPatientsToTransfer || money < salary)
-        return;
+    // Pas de patients ou pas d'argent pour payer le salaire; on sort d'ici
+    if (stocks[ItemType::SickPatient] <= 0 || money < salary) return;
+
+    // Conditions : doit avoir assez de patients à transférer
+    if (nbPatientsToTransfer > stocks[ItemType::SickPatient]) nbPatientsToTransfer = stocks[ItemType::SickPatient];
+
+    // Choisir un hôpital au hasard
+    auto* hospital = chooseRandomSeller(hospitals);
+     // On transfère les patients
+    const int accepted = hospital->transfer(ItemType::SickPatient, nbPatientsToTransfer);
+
+    // Si l'hôpital n'a rien accepté, on sort d'ici
+    if(accepted <= 0) return;
 
     // On paie le salaire du jour
     money -= salary;
+    nbEmployeesPaid += 1;
     
-    // On transfère les patients
-    stocks[ItemType::SickPatient] -= nbPatientsToTransfer;
-    hospital->transfer(ItemType::SickPatient, nbPatientsToTransfer);
-
-    // On reçoit le paiement pour le transport
-    money += nbPatientsToTransfer * getCostPerService(ServiceType::Transport);
+    // On met à jour le stock de patients dans l'ambulance
+    stocks[ItemType::SickPatient] -= accepted;
+    
+    // On créait la facture
+    this->insurance->invoice(accepted * getCostPerService(ServiceType::Transport), this);
 }
 
 void Ambulance::pay(int bill) {

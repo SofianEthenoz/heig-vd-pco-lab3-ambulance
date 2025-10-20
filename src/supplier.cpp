@@ -44,6 +44,11 @@ void Supplier::paySuppliersStaff() {
 
 void Supplier::attemptToProduceResource() {
     // TODO
+
+    // Vérifier qu'il y a des ressources à produire
+    if (resourcesSupplied.empty()) return;
+
+    // Choisir un item à produire
     ItemType itemToProduce = Seller::chooseRandomItem(stocks);
     int costPerUnit = getCostPerUnit(itemToProduce);
     
@@ -58,9 +63,15 @@ void Supplier::attemptToProduceResource() {
 
 int Supplier::buy(ItemType it, int qty) {
     // TODO
-    if (stocks[it] < qty)
-        return 0;
+    // Vérifier la validité de la demande
 
+    // si la quantité est nulle ou négative 
+    if (qty <= 0) return 0;
+    // si le Supplier ne vend pas cette ressource
+    if (!sellsResource(it)) return 0;
+    // si le stock est insuffisant
+    if (this->stocks[it] < qty) return 0;
+    
     // Retire la quantité achetée du stock
     this->stocks[it] -= qty;
 
