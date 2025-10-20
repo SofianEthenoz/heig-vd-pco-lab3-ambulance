@@ -22,6 +22,7 @@ void Supplier::run() {
         if (PcoThread::thisThread()->stopRequested()) break;
 
         attemptToProduceResource();
+        paySuppliersStaff();
 
         clock->worker_end_day();
     }
@@ -29,13 +30,34 @@ void Supplier::run() {
     logger() << "Supplier " <<  uniqueId << " stopping with fund " << money << std::endl;
 }
 
+void Supplier::paySuppliersStaff() {
+    // TODO
+    int totalSalary = getAmountPaidToEmployees(EmployeeType::Supplier);
+    
+    if (money >= totalSalary)
+        money -= totalSalary;
+
+    this->nbEmployeesPaid++;
+}
+
 void Supplier::attemptToProduceResource() {
     // TODO
+    ItemType itemToProduce = Seller::chooseRandomItem(stocks);
+    int costPerUnit = getCostPerUnit(itemToProduce);
+    
+    if (money >= costPerUnit) {
+        // Payer le supplier
+        money -= costPerUnit;
 
+        // Ajouter l'article au stock
+        stocks[itemToProduce] += 1;
+    }
 }
 
 int Supplier::buy(ItemType it, int qty) {
     // TODO
+    if (stocks[it] < qty)
+        return 0;
 
     // Retire la quantité achetée du stock
     this->stocks[it] -= qty;
