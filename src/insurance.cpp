@@ -3,9 +3,10 @@
 #include <pcosynchro/pcomutex.h>
 #include <pcosynchro/pcothread.h>
 
-static PcoMutex mutex;
 
 Insurance::Insurance(int uniqueId, int fund) : Seller(fund, uniqueId) {}
+
+static PcoMutex mutex;
 
 void Insurance::run() {
     logger() << "Insurance " <<  uniqueId << " starting with fund " << money << std::endl;

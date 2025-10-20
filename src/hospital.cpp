@@ -9,6 +9,8 @@ Hospital::Hospital(int id, int fund, int maxBeds)
     stocks[ItemType::RehabPatient] = 0;
 }
 
+static PcoMutex mutex;
+
 void Hospital::run() {
     logger() << "Hospital " <<  uniqueId << " starting with fund " << money << ", maxBeds " << maxBeds << std::endl;
 
@@ -71,7 +73,14 @@ void Hospital::payNursingStaff() {
 
 void Hospital::pay(int bill) {
     // TODO
+    // protéger l'accès concurrent à la liste des factures impayées
+    mutex.lock();
+
+    // on ajoute la facture au fonds de l'hôpital
     this->money += bill;
+
+    // libérer le mutex
+    mutex.unlock();
 }
 
 void Hospital::addPatients(int nbPatients) {

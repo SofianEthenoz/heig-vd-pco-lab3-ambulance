@@ -12,6 +12,8 @@ Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSuppli
     }
 }
 
+static PcoMutex mutex;
+
 void Supplier::run() {
     logger() << "Supplier " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -68,8 +70,14 @@ int Supplier::buy(ItemType it, int qty) {
 
 void Supplier::pay(int bill) {
     // TODO
+    // protéger l'accès concurrent à la liste des factures impayées
+    mutex.lock();
+
     // Comme d'habitude on raque
     this->money += bill;
+
+    // libérer le mutex
+    mutex.unlock();
 }
 
 int Supplier::getMaterialCost() {

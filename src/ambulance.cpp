@@ -13,6 +13,8 @@ Ambulance::Ambulance(int id, int fund,
     }
 }
 
+static PcoMutex mutex;
+
 void Ambulance::run() {
     logger() << "Ambulance " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -54,8 +56,14 @@ void Ambulance::sendPatients() {
 
 void Ambulance::pay(int bill) {
     // TODO
+    // protéger l'accès concurrent à la liste des factures impayées
+    mutex.lock();
+
     // On raque
     money += bill;
+
+    // libérer le mutex
+    mutex.unlock();
 }
 
 void Ambulance::setHospitals(std::vector<Seller*> h) {

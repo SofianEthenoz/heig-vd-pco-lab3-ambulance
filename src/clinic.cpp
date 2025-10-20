@@ -14,6 +14,8 @@ Clinic::Clinic(int id, int fund, std::vector<ItemType> resourcesNeeded)
     stocks[ItemType::RehabPatient] = 0;
 }
 
+static PcoMutex mutex;
+
 void Clinic::run() {
     logger() << "Clinic " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -157,7 +159,14 @@ void Clinic::treatOne() {
 
 void Clinic::pay(int bill) {
     // TODO
+    // protéger l'accès concurrent à la liste des factures impayées
+    mutex.lock();
+
+    // on ajoute la facture au fonds de la clinique
     this->money += bill;
+
+    // libérer le mutex
+    mutex.unlock();
 }
 
 Supplier *Clinic::chooseRandomSupplier(ItemType item) {
