@@ -103,7 +103,9 @@ TEST_F(HospitalFixture, ReceivesRehabPatientsStartsTimers) {
     EXPECT_EQ(hosp->stocks[ItemType::RehabPatient], 3);
 
     int startFund = hosp->money;
-    for (int day = 0; day < 5; ++day) hosp->updateRehab();
+    for (int day = 0; day < 5; ++day) {
+        hosp->updateRehab();
+    }
 
     EXPECT_EQ(hosp->stocks[ItemType::RehabPatient], 0);
     EXPECT_EQ(hosp->getNumberPatients(), 3);

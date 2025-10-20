@@ -25,6 +25,33 @@ public:
      */
     Hospital(int uniqueId, int fund, int maxBeds);
 
+
+    // track the information of patients to know when they can leave the hospital
+    struct PatientInfo {
+        int nbPatients; // Number of patients being transported
+        int remainingDays; // Days left until arrival at hospital
+    };
+
+    // List of patients in hospital
+    std::vector<PatientInfo> patientsInfo;
+
+    /**
+     * @brief Adds patients to the hospital's tracking system for rehabilitation.
+     * @param nbPatients Number of patients to add.
+     */
+    void addPatients(int nbPatients);
+
+    /**
+     * @brief Removes patients whose rehabilitation period has finished.
+     * @return Number of patients removed.
+     */
+    int removePatientsWhenRehabFinished();
+
+    /**
+     * @brief Decreases the remaining days for all patients by one.
+     */
+    void removeOneDayForAllPatients();
+
     /**
      * @brief Receives a transfer request of patients (sick or in rehabilitation)
      *        from an Ambulance or a Clinic.

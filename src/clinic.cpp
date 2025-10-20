@@ -17,10 +17,11 @@ Clinic::Clinic(int id, int fund, std::vector<ItemType> resourcesNeeded)
 void Clinic::run() {
     logger() << "Clinic " <<  uniqueId << " starting with fund " << money << std::endl;
 
-    while (!PcoThread::thisThread()->stopRequested()) {
+    while (true) {
         clock->worker_wait_day_start();
+
         // TODO condition d'arrêt
-        if (false) break;
+        if (PcoThread::thisThread()->stopRequested()) break;
 
         // Essayer de traiter le prochain patient
         processNextPatient();
@@ -91,7 +92,7 @@ void Clinic::processNextPatient() {
 
 void Clinic::sendPatientsToRehab() {
     // TODO
-    // on envoie les patients à l'hôpital de réhabilitation
+    // on envoie les patients à l'hôpital en réhabilitation
     this->hospitals[0]->transfer(ItemType::RehabPatient, this->stocks[ItemType::RehabPatient]);
 
     // on reçoit l'argent du transfert
@@ -121,6 +122,7 @@ void Clinic::orderResources() {
                 supplier->buy(item, 1);
 
                 // on ajoute la facture impayée
+                // ! INFO: not tested
                 this->unpaidBills.push_back({supplier, getCostPerUnit(item)});
                 break;
             }

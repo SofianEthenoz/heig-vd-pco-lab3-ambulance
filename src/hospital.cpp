@@ -14,7 +14,9 @@ void Hospital::run() {
 
     while (true) {
         clock->worker_wait_day_start();
-        if (false /* TODO condition d'arrêt */) break;
+
+        // TODO condition d'arrêt
+        if (PcoThread::thisThread()->stopRequested()) break;
 
         transferSickPatientsToClinic();
         updateRehab();
@@ -27,33 +29,110 @@ void Hospital::run() {
 }
 
 void Hospital::transferSickPatientsToClinic() {
-
     // TODO
+    // on envoie les patients à la clinique se faire soigner
+    this->clinics[0]->transfer(ItemType::SickPatient, this->stocks[ItemType::SickPatient]);
 
+    // on reçoit l'argent du transfert
+    this->money += getCostPerService(ServiceType::PreTreatmentStay) * this->stocks[ItemType::SickPatient];
+
+    // les patients ne sont plus dans l'hôpital
+    this->stocks[ItemType::SickPatient] = 0;
 }
 
 void Hospital::updateRehab() {
-
     // TODO
+    // on décrémente le nombre de jours restants pour chaque patient
+    removeOneDayForAllPatients();
 
+    // après 5 jours, un patient en réhabilitation est guéri et libère un lit
+    int removedPatients = removePatientsWhenRehabFinished();
+    this->stocks[ItemType::RehabPatient] -= removedPatients;
+
+    // On raque comme d'habitude
+    this->money += getCostPerService(ServiceType::Rehab) * removedPatients;
+}
+
+void Hospital::removeOneDayForAllPatients() {
+    // si pas de patients, on fait rien
+    if (this->patientsInfo.empty())
+        return;
+
+    // on décrémente le nombre de jours restants pour chaque patient
+    for (auto& patientInfo : this->patientsInfo)
+        --patientInfo.remainingDays;
 }
 
 void Hospital::payNursingStaff() {
-
     // TODO
-
+    this->money -= getEmployeeSalary(EmployeeType::NursingStaff) * this->nbNursingStaff;
+    this->nbEmployeesPaid += this->nbNursingStaff;
 }
 
 void Hospital::pay(int bill) {
-
     // TODO
+    this->money += bill;
+}
 
+void Hospital::addPatients(int nbPatients) {
+    this->patientsInfo.push_back({nbPatients, 5});
+}
+
+int Hospital::removePatientsWhenRehabFinished() {
+    auto itRemove = std::remove_if(
+        patientsInfo.begin(),
+        patientsInfo.end(),
+        [](const PatientInfo& p) { return p.remainingDays == 0; }
+    );
+    
+    int removed = 0;
+
+    // on récupère le nombre de patients à retirer
+    for (;itRemove != patientsInfo.end(); itRemove++)
+        removed += itRemove->nbPatients;
+
+    // on supprime les patients guéris
+    patientsInfo.erase(itRemove, patientsInfo.end());
+
+    // on les ajoutes aux patients libérés
+    nbFreed += removed;
+
+    return removed;
 }
 
 int Hospital::transfer(ItemType what, int qty) {
-    // TODO
-    
-    return this->stocks[what] += qty;
+    // TODO 
+    // 1. L'hôpital n'accepte que des patients malades ou en réhabilitation
+    if (what != ItemType::SickPatient && what != ItemType::RehabPatient)
+        return 0;
+
+    // 2. Refuse si la clinique n’a plus de fonds    
+    if (money <= 0)
+        return 0;
+
+    // 3. Transferer seulement si des lits sont disponibles
+    int availableBeds = maxBeds - getNumberPatients();
+
+    if (availableBeds < qty)
+    {
+        // on accepte seulement le nombre de patients pouvant être hébergés
+        stocks[what] += availableBeds;
+
+        // ajouter les patients en réhabilitation pour tracker le nombre de jours restants
+        if (what == ItemType::RehabPatient)
+            this->addPatients(availableBeds);
+
+        return availableBeds;
+    }
+
+    // 4. Sinon accepter et ajouter les patients au stock
+    stocks[what] += qty;
+
+    // ajouter les patients en réhabilitation pour tracker le nombre de jours restants
+    if (what == ItemType::RehabPatient)
+        this->addPatients(qty);
+
+    return qty;
 }
 
 int Hospital::getNumberPatients() {
