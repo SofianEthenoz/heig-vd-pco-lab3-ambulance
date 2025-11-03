@@ -1,5 +1,7 @@
 # Rapport de développement – Simulation hospitalière (PCO)
 
+Auteur : Sofian Ethenoz & Gatien Jayme
+
 Ce document présente la démarche suivie pour implémenter la simulation hospitalière en appliquant
 le **Test‑Driven Development (TDD)** et décrit les décisions techniques adoptées pour respecter
 l’intégralité des tests fonctionnels et de concurrence.
@@ -41,13 +43,13 @@ Ces résultats confirment la conservation des ressources ainsi que la bonne gest
 ## 4. Utilisation de l’IA
 
 Aucune portion de code n’a été générée automatiquement.  
-L’intelligence artificielle (ChatGPT 5) a uniquement été sollicitée pour la mise en forme ainsi que la reformulation la présente documentation.
-Le but étant de rendre la documentation concise et professionnel.
+L’intelligence artificielle (ChatGPT 5) a uniquement été sollicitée pour la mise en forme ainsi que la reformulation de la présente documentation.
+Le but étant de rendre la documentation concise et professionnelle.
 ---
 
 ## 5. Mot de la fin
-Nous avons fais l'erreur sur le labo précédant de ne pas commenter nôtre code. Nous avons fait tout l'inverse sur ce labo. Lorsque l'on travail sur le code écrit par quelqu'un d'autre, comprendre ce qu'a voulu faire le développeur avant nous n'est pas chose aisée. L'utilisation massifs des commentaires  permet de se plonger dans le code plus facilement.
+Nous avons fais l'erreur sur le labo précédant de ne pas commenter nôtre code. Nous avons fait tout l'inverse sur ce labo. Lorsque l'on travail sur le code écrit par quelqu'un d'autre, comprendre ce qu'a voulu effectuer le développeur avant nous, n'est pas chose aisée. L'utilisation massifs des commentaires  permet de se plonger dans le code plus facilement et cela rend le code plus lisible à lire.
 
-Aussi, les occasions de faire du vrai TDD ne sont pas nombreuses. Sur ce laboratoire, les tests on rendu bien plus simple l'implémentation des fonctionnalités. Si le temps le permettait, pleins d'autres testes pourraient être ajoutés par exemple sur les facturations et l'argent de manière générale.
+Aussi, les occasions de faire du vrai TDD ne sont pas nombreuses. Sur ce laboratoire, les tests on rendu bien plus simple l'implémentation des fonctionnalités. Si le temps le permettait, une plus grande quantité de testes pourraient être ajoutés par exemple sur les facturations et l'argent de manière générale.
 
-Nous avons perdu passablement de temps dessus lorsque nous avons réalisé que les fonds n'étaient pas conforme en fin de programme.
+Nous avons dû investir un temps conséquent qui aurait pu être évité si ces tests avaient été implémnentés dés le début lorsque nous avons réalisé que les fonds n'étaient pas conformes en fin de programme.
