@@ -12,8 +12,6 @@ Supplier::Supplier(int uniqueId, int fund, std::vector<ItemType> resourcesSuppli
     }
 }
 
-static PcoMutex mutex;
-
 void Supplier::run() {
     logger() << "Supplier " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -39,7 +37,13 @@ void Supplier::attemptToProduceResource() {
 
     // Vérifier qu'il y a assez d'argent pour payer le salaire
     const int salary = getEmployeeSalary(EmployeeType::Supplier);
-    if (money < salary) return; 
+
+    mutex.lock();
+
+    if (money < salary) {
+        mutex.unlock();
+        return;
+    } 
 
     // Choisir un item à produire
     ItemType itemToProduce = Seller::chooseRandomItem(stocks);
@@ -48,21 +52,30 @@ void Supplier::attemptToProduceResource() {
     // Payer le salaire
     money -= salary;
     nbEmployeesPaid += 1;
+
+    mutex.unlock();
 }
 
 int Supplier::buy(ItemType it, int qty) {
     // TODO
-    // Vérifier la validité de la demande
-
     // si la quantité est nulle ou négative 
     if (qty <= 0) return 0;
+
     // si le Supplier ne vend pas cette ressource
     if (!sellsResource(it)) return 0;
+
+    mutex.lock();
+
     // si le stock est insuffisant
-    if (this->stocks[it] < qty) return 0;
+    if (this->stocks[it] < qty) {
+        mutex.unlock();
+        return 0;
+    } 
     
     // Retire la quantité achetée du stock
     this->stocks[it] -= qty;
+
+    mutex.unlock();
 
     // Retourne le coût unitaire multiplié par la quantité
     return getCostPerUnit(it) * qty;

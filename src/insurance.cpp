@@ -6,8 +6,6 @@
 
 Insurance::Insurance(int uniqueId, int fund) : Seller(fund, uniqueId) {}
 
-static PcoMutex mutex;
-
 void Insurance::run() {
     logger() << "Insurance " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -48,24 +46,32 @@ void Insurance::invoice(int bill, Seller* who) {
 
 void Insurance::payBills() {
     // TODO
-    int paid = 0;
-    
-    for (std::pair<Seller*, int> bill : this->unpaidBills)
-    {
-        if(money >= bill.second)
-        {
-            // on paie la facture au Seller
-            bill.first->pay(bill.second);
+    std::vector<std::pair<Seller*, int>> toPay;
 
-            // on retire le montant de la facture des fonds de l'assurance
-            this->money -= bill.second;
-
-            paid++;
-        } else {
-            break;
-        }
-    }
+    // protège l'accès conccurent avec unpaidBills et les autres variables partagées
+    mutex.lock();
+    toPay = unpaidBills;
 
     // on retire les factures payées de la liste des factures impayées
-    this->unpaidBills.erase(this->unpaidBills.begin(), this->unpaidBills.begin() + paid);
+    unpaidBills.clear();
+    mutex.unlock();
+
+    for (auto& bill : toPay) {
+        if (!bill.first) continue;
+
+        mutex.lock();
+        if (money < bill.second) {
+            unpaidBills.push_back(bill);
+            mutex.unlock();
+            continue;
+        }
+
+        // on retire le montant de la facture des fonds de l'assurance
+        money -= bill.second;
+        mutex.unlock();
+
+        // on paie la facture au Seller
+        bill.first->pay(bill.second);
+    }
 }
+

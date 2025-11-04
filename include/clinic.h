@@ -15,6 +15,8 @@
  */
 class Clinic : public Seller
 {
+private:
+    PcoMutex mutex;
 public:
     /// Allows test classes to access protected/private members
     friend class TestableClinic;

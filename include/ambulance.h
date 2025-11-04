@@ -11,6 +11,8 @@
  * hospitals and interacting with insurance.
  */
 class Ambulance : public Seller {
+private:
+    PcoMutex mutex;
 public:
     /// Allows test classes to access protected/private members
     friend class TestableAmbulance;

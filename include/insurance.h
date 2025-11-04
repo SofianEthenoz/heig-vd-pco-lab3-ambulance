@@ -13,6 +13,8 @@
  * processes payments, and collects regular contributions from its clients.
  */
 class Insurance : public Seller {
+private:
+    PcoMutex mutex;
 public:
     friend class TestableInsurance;
 

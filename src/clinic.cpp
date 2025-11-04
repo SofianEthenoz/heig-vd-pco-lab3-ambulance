@@ -14,8 +14,6 @@ Clinic::Clinic(int id, int fund, std::vector<ItemType> resourcesNeeded)
     stocks[ItemType::RehabPatient] = 0;
 }
 
-static PcoMutex mutex;
-
 void Clinic::run() {
     logger() << "Clinic " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -43,20 +41,33 @@ void Clinic::run() {
 
 int Clinic::transfer(ItemType what, int qty) {
     // TODO
+    mutex.lock();
+
     // 1. La clinique n'accepte que des patients malades
     if (what != ItemType::SickPatient)
+    {
+        mutex.unlock();
         return 0;
+    }
 
     // 2. Refuse si la clinique n’a plus de fonds    
     if (money <= 0)
+    {
+        mutex.unlock();
         return 0;
+    }
 
     // 3. Refuser si elle a des factures impayées
     if (this->unpaidBills.size() > 0)
-        return 0;   
+    {
+        mutex.unlock();
+        return 0;
+    }
 
     // 4. Sinon accepter et ajouter les patients au stock
     stocks[what] += qty;
+
+    mutex.unlock();
     return qty;
 }
 
@@ -72,19 +83,26 @@ bool Clinic::hasResourcesForTreatment() const {
 }
 
 void Clinic::payBills() {
-    // TODO
-    
-    for (std::pair<Supplier*, int>& bill : this->unpaidBills)
-    {
+     // TODO
+    std::vector<std::pair<Supplier*, int>> toPay;
+
+    mutex.lock();
+    toPay = this->unpaidBills;
+
+    // on retire les factures de la liste des factures impayées
+    this->unpaidBills.clear();
+    mutex.unlock();
+
+    for (auto& bill : toPay) {
         // on paie la facture au Supplier
-        bill.first->pay(bill.second);
+        if (bill.first)
+            bill.first->pay(bill.second);
 
         // on retire le montant de la facture des fonds de la clinique
+        mutex.lock();
         this->money -= bill.second;
+        mutex.unlock();
     }
-        
-    // on retire les factures de la liste des factures impayées    
-    this->unpaidBills.clear();
 }
 
 void Clinic::processNextPatient() {
@@ -94,63 +112,88 @@ void Clinic::processNextPatient() {
 
 void Clinic::sendPatientsToRehab() {
     // TODO
+    int nbToSend;
+    
+    mutex.lock();
+    nbToSend = this->stocks[ItemType::RehabPatient];
+    mutex.unlock();
+
     // on envoie les patients à l'hôpital en réhabilitation
-    const int accepted = this->hospitals[0]->transfer(ItemType::RehabPatient, this->stocks[ItemType::RehabPatient]);
+    const int accepted = this->hospitals[0]->transfer(ItemType::RehabPatient, nbToSend);
 
     // Si l'hôpital n'a rien accepté, on sort d'ici
     if (accepted <= 0) return;
 
     // les patients ne sont plus dans la clinique
+    mutex.lock();
     this->stocks[ItemType::RehabPatient] -= accepted;
+    mutex.unlock();
 
     // on crée la facture
     this->insurance->invoice(getCostPerService(ServiceType::Treatment) * accepted, this);
 }
 
 void Clinic::orderResources() {
-    // TODO    
+    // TODO
+
+    // Pour chaque ressource dont la clinique a besoin
     for (ItemType item : resourcesNeeded) {
-        // On reçoit une ressource commandée
+
+        // On cherche un fournisseur compatible
+        Supplier* chosenSupplier = nullptr;
+
+        // protéger l'accès concurrent aux données internes de la clinique
+        mutex.lock();
         this->stocks[item] += 1;
 
-        // on retire du supplier la ressource commandée
-        for (Seller* sup : this->suppliers)
-        {
+        for (Seller* sup : this->suppliers) {
             Supplier* supplier = dynamic_cast<Supplier*>(sup);
-            
-            // verification si le Seller n'est pas un Supplier on passe au suivant
+
             if (supplier == nullptr)
-                continue;          
+                continue;
 
-            // Si le Supplier vend la ressource, on effectue le transfert
             if (supplier->sellsResource(item)) {
-                supplier->buy(item, 1);
+                chosenSupplier = supplier;
 
-                // on ajoute la facture impayée
-                // ! INFO: not tested
+                // On enregistre la facture impayée
                 this->unpaidBills.push_back({supplier, getCostPerUnit(item)});
                 break;
             }
-        } 
+        }
+        mutex.unlock();  // On a fini d'accéder aux données de la clinique
+
+        // On contacte le fournisseur en dehors du verrou
+        if (chosenSupplier != nullptr) {
+            chosenSupplier->buy(item, 1);
+        }
     }
 }
 
 void Clinic::treatOne() {
     // TODO
+
+    mutex.lock();
+
     // pas de patients à traiter
-    if (stocks[ItemType::SickPatient] <= 0) return;
+    if (stocks[ItemType::SickPatient] <= 0) {
+        mutex.unlock();
+        return;
+    }
 
     // si l'on n'a pas assez de fonds, le traitement ne sera pas effectif
-    if(!hasResourcesForTreatment())
+    if (!hasResourcesForTreatment()) {
+        mutex.unlock();
         return;
+    }
 
     // on consomme les ressources nécessaires
     for (const auto& item : resourcesNeeded) {
-        
         // si la ressource est épuisée, on commande
-        if (this->stocks[item] <= 0)
+        if (this->stocks[item] <= 0) {
+            mutex.unlock();
             orderResources();
-        
+            mutex.lock();
+        }
         this->stocks[item] -= 1;
     }
 
@@ -161,6 +204,8 @@ void Clinic::treatOne() {
     // on paie le spécialiste
     this->money -= getEmployeeSalary(EmployeeType::TreatmentSpecialist);
     this->nbEmployeesPaid += 1;
+
+    mutex.unlock();
 }
 
 void Clinic::pay(int bill) {

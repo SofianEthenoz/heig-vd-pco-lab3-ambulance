@@ -17,6 +17,9 @@
  * - Manages its finances and available stock safely in a concurrent environment.
  */
 class Supplier : public Seller {
+private:
+    PcoMutex mutex;
+    
 public:
     friend class TestableSupplier;
 

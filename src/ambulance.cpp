@@ -13,8 +13,6 @@ Ambulance::Ambulance(int id, int fund,
     }
 }
 
-static PcoMutex mutex;
-
 void Ambulance::run() {
     logger() << "Ambulance " <<  uniqueId << " starting with fund " << money << std::endl;
 
@@ -38,10 +36,16 @@ void Ambulance::sendPatients() {
     // Obtenir le salaire d'un EmergencyStaff
     const int salary = getEmployeeSalary(EmployeeType::EmergencyStaff);
 
-    // Pas de patients ou pas d'argent pour payer le salaire; on sort d'ici
-    if (stocks[ItemType::SickPatient] <= 0 || money < salary) return;
+    // protéger l'accès concurrent à money
+    mutex.lock();
 
-    // Conditions : doit avoir assez de patients à transférer
+    // Pas de patients ou pas d'argent pour payer le salaire; on sort d'ici
+    if (stocks[ItemType::SickPatient] <= 0 || money < salary) {
+        mutex.unlock();
+        return;
+    }
+
+    // Conditions doit avoir assez de patients à transférer
     if (nbPatientsToTransfer > stocks[ItemType::SickPatient]) nbPatientsToTransfer = stocks[ItemType::SickPatient];
 
     // Choisir un hôpital au hasard
@@ -50,11 +54,16 @@ void Ambulance::sendPatients() {
     const int accepted = hospital->transfer(ItemType::SickPatient, nbPatientsToTransfer);
 
     // Si l'hôpital n'a rien accepté, on sort d'ici
-    if(accepted <= 0) return;
+    if(accepted <= 0) {
+        mutex.unlock();
+        return;
+    }
 
     // On paie le salaire du jour
     money -= salary;
     nbEmployeesPaid += 1;
+
+    mutex.unlock();
     
     // On met à jour le stock de patients dans l'ambulance
     stocks[ItemType::SickPatient] -= accepted;

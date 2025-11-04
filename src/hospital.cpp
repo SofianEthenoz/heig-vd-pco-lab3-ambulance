@@ -9,8 +9,6 @@ Hospital::Hospital(int id, int fund, int maxBeds)
     stocks[ItemType::RehabPatient] = 0;
 }
 
-static PcoMutex mutex;
-
 void Hospital::run() {
     logger() << "Hospital " <<  uniqueId << " starting with fund " << money << ", maxBeds " << maxBeds << std::endl;
 
@@ -32,42 +30,64 @@ void Hospital::run() {
 
 void Hospital::transferSickPatientsToClinic() {
     // TODO
-    // pas de cliniques associées
-    if (clinics.empty()) return;
+    int toSend = 0;
 
-    // pas de patients à transférer
-    if (stocks[ItemType::SickPatient] <= 0) return;
+    mutex.lock();
+
+    // Refuse si pas de cliniques associées
+    if (clinics.empty()) {
+        mutex.unlock();
+        return;
+    }
+
+    // Refuse si on n'a pas de patients à transférer
+    if (stocks[ItemType::SickPatient] <= 0) {
+        mutex.unlock();
+        return;
+    }
 
     // Refuse si l'hôpital n’a plus de fonds
-    if (money <= 0)
-        return;    
+    if (money <= 0) {
+        mutex.unlock();
+        return;
+    }
+
+    toSend = stocks[ItemType::SickPatient];
+    mutex.unlock();
 
     // on envoie les patients à la clinique se faire soigner
-    int accepted = this->clinics[0]->transfer(ItemType::SickPatient, this->stocks[ItemType::SickPatient]);
+    int accepted = clinics[0]->transfer(ItemType::SickPatient, toSend);
 
     // Si la clinique n'a rien accepté, on sort d'ici
     if(accepted <= 0) return;
 
     // les patients ne sont plus dans l'hôpital
-    this->stocks[ItemType::SickPatient] -= accepted;
+    mutex.lock();
+    stocks[ItemType::SickPatient] -= accepted;
+    mutex.unlock();
 
-    // on reçoit l'argent du transfert
-    this->insurance->invoice(getCostPerService(ServiceType::PreTreatmentStay) * accepted, this);
+    // Facturation
+    insurance->invoice(getCostPerService(ServiceType::PreTreatmentStay) * accepted, this);
 }
 
 void Hospital::updateRehab() {
     // TODO
-    if (stocks[ItemType::RehabPatient] <= 0) return;
+
+    // Refuse si on n'a pas de patients
+    if (stocks[ItemType::RehabPatient] <= 0) {
+        mutex.unlock();
+        return;
+    }
 
     // on décrémente le nombre de jours restants pour chaque patient
     removeOneDayForAllPatients();
 
     // après 5 jours, un patient en réhabilitation est guéri et libère un lit
     int removedPatients = removePatientsWhenRehabFinished();
-    this->stocks[ItemType::RehabPatient] -= removedPatients;
+    stocks[ItemType::RehabPatient] -= removedPatients;
 
     // On raque comme d'habitude
-    this->insurance->invoice(getCostPerService(ServiceType::Rehab) * removedPatients, this);
+    insurance->invoice(getCostPerService(ServiceType::Rehab) * removedPatients, this);
 }
 
 void Hospital::removeOneDayForAllPatients() {
@@ -82,8 +102,12 @@ void Hospital::removeOneDayForAllPatients() {
 
 void Hospital::payNursingStaff() {
     // TODO
+    mutex.lock();
+
     this->money -= getEmployeeSalary(EmployeeType::NursingStaff) * this->nbNursingStaff;
     this->nbEmployeesPaid += this->nbNursingStaff;
+
+    mutex.unlock();
 }
 
 void Hospital::pay(int bill) {
@@ -99,10 +123,12 @@ void Hospital::pay(int bill) {
 }
 
 void Hospital::addPatients(int nbPatients) {
-    this->patientsInfo.push_back({nbPatients, 5});
+    patientsInfo.push_back({nbPatients, 5});
 }
 
 int Hospital::removePatientsWhenRehabFinished() {
+    mutex.lock(); 
+
     auto itRemove = std::remove_if(
         patientsInfo.begin(),
         patientsInfo.end(),
@@ -121,25 +147,40 @@ int Hospital::removePatientsWhenRehabFinished() {
     // on les ajoutes aux patients libérés
     nbFreed += removed;
 
+    mutex.unlock(); 
+
     return removed;
 }
 
 int Hospital::transfer(ItemType what, int qty) {
     // TODO 
+
+    // protége l'accès car la fonction peut être appeler par hopitaux et clinique
+    mutex.lock();
+
     // 1. L'hôpital n'accepte que des patients malades ou en réhabilitation
     if (what != ItemType::SickPatient && what != ItemType::RehabPatient)
+    {
+        mutex.unlock();
         return 0;
+    }
 
     // 2. Refuse si la clinique n’a plus de fonds    
     if (money <= 0)
+    {
+        mutex.unlock();
         return 0;
+    }   
 
     // 3. Transferer seulement si des lits sont disponibles
     int availableBeds = maxBeds - getNumberPatients();
 
     // pas de lits disponibles
     if(availableBeds <= 0)
+    {
+        mutex.unlock();
         return 0;
+    }
 
     // pas assez de lits disponibles pour tous les patients
     if (availableBeds < qty)
@@ -151,6 +192,7 @@ int Hospital::transfer(ItemType what, int qty) {
         if (what == ItemType::RehabPatient)
             this->addPatients(availableBeds);
 
+        mutex.unlock();
         return availableBeds;
     }
 
@@ -161,6 +203,7 @@ int Hospital::transfer(ItemType what, int qty) {
     if (what == ItemType::RehabPatient)
         this->addPatients(qty);
 
+    mutex.unlock();
     return qty;
 }
 

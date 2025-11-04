@@ -14,6 +14,8 @@
  * clinics and insurance entities. It also handles the internal economic logic such as paying staff.
  */
 class Hospital : public Seller {
+private:
+    PcoMutex mutex;
 public:
     friend class TestableHospital;
 
