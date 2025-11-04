@@ -30,8 +30,6 @@ void Hospital::run() {
 
 void Hospital::transferSickPatientsToClinic() {
     // TODO
-    int toSend = 0;
-
     mutex.lock();
 
     // Refuse si pas de cliniques associées
@@ -52,7 +50,7 @@ void Hospital::transferSickPatientsToClinic() {
         return;
     }
 
-    toSend = stocks[ItemType::SickPatient];
+    int toSend = stocks[ItemType::SickPatient];
     mutex.unlock();
 
     // on envoie les patients à la clinique se faire soigner
@@ -75,7 +73,6 @@ void Hospital::updateRehab() {
 
     // Refuse si on n'a pas de patients
     if (stocks[ItemType::RehabPatient] <= 0) {
-        mutex.unlock();
         return;
     }
 

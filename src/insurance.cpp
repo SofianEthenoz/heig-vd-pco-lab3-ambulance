@@ -29,7 +29,11 @@ void Insurance::run() {
 
 void Insurance::receiveContributions() {
     // TODO
+    mutex.lock();
+
     this->money += INSURANCE_CONTRIBUTION;
+
+    mutex.unlock();
 }
 
 void Insurance::invoice(int bill, Seller* who) {

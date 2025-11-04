@@ -76,3 +76,5 @@ Nous avons fais l'erreur sur le labo précédant de ne pas commenter nôtre code
 Aussi, les occasions de faire du vrai TDD ne sont pas nombreuses. Sur ce laboratoire, les tests on rendu bien plus simple l'implémentation des fonctionnalités. Si le temps le permettait, une plus grande quantité de testes pourraient être ajoutés par exemple sur les facturations et l'argent de manière générale.
 
 Nous avons dû investir un temps conséquent qui aurait pu être évité si ces tests avaient été implémnentés dés le début lorsque nous avons réalisé que les fonds n'étaient pas conformes en fin de programme.
+
+Aussi, les commentaires todo ont été laissé dans le code pour distinguer plus facilement nôtre code de celui fourni
